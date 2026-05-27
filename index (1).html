@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp SaaS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #070b12;
+      --surface: rgba(18, 24, 38, .86);
+      --surface2: rgba(31, 42, 66, .9);
+      --border: rgba(148, 163, 184, .16);
+      --accent: #25d366;
+      --accent-dim: rgba(37,211,102,0.12);
+      --accent-glow: rgba(37,211,102,0.25);
+      --text: #e8eaed;
+      --muted: #6b7280;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: radial-gradient(circle at 12% 0%, rgba(37,211,102,.13), transparent 28%), radial-gradient(circle at 88% 8%, rgba(59,130,246,.14), transparent 26%), var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── AUTH ── */
+    #auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(37,211,102,0.08) 0%, transparent 60%), var(--bg);
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px;
+      animation: fadeUp .4s ease;
+    }
+    .auth-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .auth-logo svg { color: var(--accent); }
+    .auth-logo span { font-size: 18px; font-weight: 600; letter-spacing: -.3px; }
+    .auth-tabs { display: flex; gap: 4px; background: var(--bg); border-radius: 8px; padding: 4px; margin-bottom: 24px; }
+    .auth-tab {
+      flex: 1; text-align: center; padding: 7px; border-radius: 6px;
+      cursor: pointer; color: var(--muted); font-weight: 500; transition: all .2s;
+      font-size: 13px;
+    }
+    .auth-tab.active { background: var(--surface2); color: var(--text); }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+    input, textarea, select {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 12px; color: var(--text);
+      font-family: inherit; font-size: 14px; outline: none; transition: border-color .2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 90px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 18px; border-radius: var(--radius); font-family: inherit;
+      font-size: 13px; font-weight: 500; cursor: pointer; border: none;
+      transition: all .18s; white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+    .btn-danger { background: rgba(239,68,68,.12); color: var(--danger); border: 1px solid rgba(239,68,68,.2); }
+    .btn-danger:hover { background: rgba(239,68,68,.2); }
+    .btn-full { width: 100%; }
+    .btn:disabled { opacity: .5; pointer-events: none; }
+
+    /* ── APP SHELL ── */
+    #app { display: none; height: 100vh; overflow: hidden; }
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+      background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; z-index: 10;
+    }
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 8px;
+      padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo svg { color: var(--accent); }
+    .sidebar-logo span { font-weight: 600; font-size: 15px; }
+    nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+      border-radius: 8px; cursor: pointer; color: var(--muted);
+      font-weight: 500; transition: all .15s; font-size: 13px;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: var(--accent-dim); color: var(--accent); }
+    .nav-item svg { flex-shrink: 0; }
+    .sidebar-footer { padding: 12px 10px; border-top: 1px solid var(--border); }
+    .user-pill {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border-radius: 8px; background: var(--surface2);
+    }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%; background: var(--accent-dim);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent); font-weight: 600; font-size: 12px; flex-shrink: 0;
+    }
+    .user-info { flex: 1; overflow: hidden; }
+    .user-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-role { font-size: 11px; color: var(--muted); }
+    .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 4px; }
+    .logout-btn:hover { color: var(--danger); }
+
+    .main { margin-left: 220px; height: 100vh; overflow-y: auto; }
+    .page { display: none; padding: 28px 32px; }
+    .page.active { display: block; }
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 20px; font-weight: 600; letter-spacing: -.3px; }
+    .page-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)), var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .card + .card { margin-top: 12px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .card-title { font-weight: 600; font-size: 14px; }
+
+    /* ── STATS ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-card {
+      background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)), var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+    .stat-value { font-size: 26px; font-weight: 600; font-family: 'DM Mono', monospace; }
+    .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── BADGE / STATUS ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500;
+    }
+    .badge-green { background: rgba(37,211,102,.12); color: var(--accent); }
+    .badge-yellow { background: rgba(245,158,11,.12); color: var(--warning); }
+    .badge-red { background: rgba(239,68,68,.12); color: var(--danger); }
+    .badge-gray { background: var(--surface2); color: var(--muted); }
+    .badge::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+    /* ── CONNECTION CARD ── */
+    .conn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .conn-card {
+      background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)), var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px;
+    }
+    .conn-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+    .conn-name { font-weight: 600; font-size: 14px; }
+    .conn-phone { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; }
+    .conn-actions { display: flex; gap: 6px; margin-top: 14px; }
+
+    /* ── QR ── */
+    .qr-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px; gap: 12px;
+    }
+    .qr-wrap img { border-radius: 8px; border: 4px solid #fff; width: 200px; height: 200px; }
+    .qr-hint { font-size: 12px; color: var(--muted); text-align: center; }
+
+    /* ── BOT CARD ── */
+    .bot-card {
+      background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)), var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .bot-card + .bot-card { margin-top: 10px; }
+    .bot-icon {
+      width: 40px; height: 40px; border-radius: 10px; background: var(--accent-dim);
+      display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0;
+    }
+    .bot-info { flex: 1; }
+    .bot-name { font-weight: 600; font-size: 14px; }
+    .bot-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .bot-actions { display: flex; gap: 6px; }
+
+    /* ── MODAL ── */
+    .modal-bg {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.6); z-index: 100;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)), var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px; width: 100%; max-width: 480px;
+      animation: fadeUp .25s ease;
+    }
+    .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+    .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast-item {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px; font-size: 13px;
+      animation: slideIn .25s ease; display: flex; align-items: center; gap: 8px;
+      min-width: 240px;
+    }
+    .toast-item.success { border-color: rgba(37,211,102,.3); }
+    .toast-item.error { border-color: rgba(239,68,68,.3); }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+    .empty { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 13px; }
+    .empty svg { margin: 0 auto 12px; display: block; opacity: .3; }
+    .loading { text-align: center; padding: 40px; color: var(--muted); }
+    .flex { display: flex; }
+    .gap-2 { gap: 8px; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:none; } }
+
+    .toggle-wrap { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+    .toggle-label { font-size: 13px; font-weight: 500; }
+    .toggle-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .toggle {
+      position: relative; width: 40px; height: 22px; flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--border); border-radius: 20px;
+      cursor: pointer; transition: .2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 16px; height: 16px;
+      left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--accent); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+    .msg-row {
+      display: flex; gap: 10px; padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .msg-dir { width: 70px; flex-shrink: 0; }
+    .msg-from { width: 140px; flex-shrink: 0; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .msg-content { flex: 1; }
+    .msg-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>WhatsApp SaaS</span>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab('login')">Entrar</div>
+      <div class="auth-tab" onclick="switchTab('register')">Criar conta</div>
+    </div>
+    <!-- LOGIN -->
+    <div id="tab-login">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" />
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary btn-full" onclick="login()" id="login-btn">Entrar</button>
+    </div>
+    <!-- REGISTER -->
+    <div id="tab-register" style="display:none">
+      <div class="form-group">
+        <label>Nome</label>
+        <input type="text" id="reg-name" placeholder="Seu nome" />
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="reg-email" placeholder="seu@email.com" />
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="reg-password" placeholder="mínimo 6 caracteres" />
+      </div>
+      <div class="form-group">
+        <label>Nome da empresa</label>
+        <input type="text" id="reg-company" placeholder="Minha Empresa" />
+      </div>
+      <button class="btn btn-primary btn-full" onclick="register()" id="reg-btn">Criar conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>WA SaaS</span>
+    </div>
+    <nav>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('conversations')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>
+        Conversas IA
+      </div>
+      <div class="nav-item" onclick="showPage('connections')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.6a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"/></svg>
+        Conexões
+      </div>
+      <div class="nav-item" onclick="showPage('bots')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+        Bots
+      </div>
+      <div class="nav-item" onclick="showPage('messages')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Mensagens
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name-display">—</div>
+          <div class="user-role" id="user-role-display">—</div>
+        </div>
+        <button class="logout-btn" onclick="logout()" title="Sair">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Visão geral do sistema</div>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-label">Conexões ativas</div><div class="stat-value" id="stat-conn">—</div></div>
+        <div class="stat-card"><div class="stat-label">Bots ativos</div><div class="stat-value" id="stat-bots">—</div></div>
+        <div class="stat-card"><div class="stat-label">Mensagens hoje</div><div class="stat-value" id="stat-msgs">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Conexões recentes</div></div>
+        <div id="dash-connections"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- CONNECTIONS -->
+    <div id="page-connections" class="page">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="page-title">Conexões WhatsApp</div>
+          <div class="page-sub">Gerencie seus números conectados</div>
+        </div>
+        <button class="btn btn-primary" onclick="openNewConn()">+ Nova conexão</button>
+      </div>
+      <div class="conn-grid" id="conn-grid"><div class="loading">Carregando...</div></div>
+    </div>
+
+    <!-- BOTS -->
+    <div id="page-bots" class="page">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="page-title">Bots de atendimento</div>
+          <div class="page-sub">Configure respostas automáticas com IA</div>
+        </div>
+        <button class="btn btn-primary" onclick="openNewBot()">+ Novo bot</button>
+      </div>
+      <div id="bots-list"><div class="loading">Carregando...</div></div>
+    </div>
+
+    <!-- CONVERSATIONS -->
+    <div id="page-conversations" class="page">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="page-title">Central Premium de Conversas</div>
+          <div class="page-sub">Memória do dia, etiquetas automáticas, prioridade e transferência humana</div>
+        </div>
+        <button class="btn btn-primary" onclick="loadConversations()">Atualizar</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Conversas inteligentes</div>
+          <div class="flex gap-2">
+            <select id="conv-filter" onchange="loadConversations()" style="width:auto;padding:6px 10px;font-size:12px">
+              <option value="">Todas</option>
+              <option value="human">Aguardando humano</option>
+              <option value="venda">Venda</option>
+              <option value="orçamento">Orçamento</option>
+              <option value="suporte">Suporte</option>
+              <option value="financeiro">Financeiro</option>
+            </select>
+          </div>
+        </div>
+        <div id="conversations-list"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div id="page-messages" class="page">
+      <div class="page-header">
+        <div class="page-title">Mensagens</div>
+        <div class="page-sub">Histórico de conversas</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Histórico</div>
+          <select id="msg-filter-conn" onchange="loadMessages()" style="width:auto;padding:6px 10px;font-size:12px">
+            <option value="">Todas as conexões</option>
+          </select>
+        </div>
+        <div id="messages-list"><div class="loading">Carregando...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nova Conexão -->
+<div class="modal-bg" id="modal-new-conn">
+  <div class="modal">
+    <div class="modal-title">Nova conexão WhatsApp</div>
+    <div class="form-group">
+      <label>Nome da conexão</label>
+      <input type="text" id="new-conn-name" placeholder="Ex: Suporte, Vendas..." />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-conn')">Cancelar</button>
+      <button class="btn btn-primary" onclick="createConnection()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: QR Code -->
+<div class="modal-bg" id="modal-qr">
+  <div class="modal" style="max-width:340px;text-align:center">
+    <div class="modal-title">Escanear QR Code</div>
+    <div class="qr-wrap">
+      <div id="qr-content"><div class="loading">Gerando QR Code...<br><small style="color:var(--muted)">Aguarde alguns segundos</small></div></div>
+    </div>
+    <div class="qr-hint">Abra o WhatsApp → <b>Dispositivos vinculados</b> → Vincular dispositivo</div>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn btn-ghost" onclick="closeModal('modal-qr')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Bot -->
+<div class="modal-bg" id="modal-bot">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-title" id="bot-modal-title">Novo bot</div>
+    <input type="hidden" id="bot-id" />
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Nome do bot</label>
+        <input type="text" id="bot-name" placeholder="Atendimento Geral" />
+      </div>
+      <div class="form-group">
+        <label>Conexão vinculada</label>
+        <select id="bot-conn"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Prompt do BOT — editável sem mexer no código</label>
+      <textarea id="bot-prompt" rows="6" placeholder="Você é um assistente de atendimento ao cliente. Seja educado e profissional."></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Modelo</label>
+        <select id="bot-model">
+          <option value="gpt-4o-mini">GPT-4o Mini (rápido)</option>
+          <option value="gpt-4o">GPT-4o</option>
+          <option value="gpt-4">GPT-4</option>
+          <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Max tokens</label>
+        <input type="number" id="bot-tokens" value="500" min="50" max="4000" />
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Horário início (ex: 08:00)</label>
+        <input type="text" id="bot-start" placeholder="08:00" />
+      </div>
+      <div class="form-group">
+        <label>Horário fim (ex: 18:00)</label>
+        <input type="text" id="bot-end" placeholder="18:00" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Palavras a ignorar (separadas por vírgula)</label>
+      <input type="text" id="bot-ignore" placeholder="humano, atendente, cancelar" />
+    </div>
+    <div class="toggle-wrap">
+      <div><div class="toggle-label">Resposta automática</div><div class="toggle-sub">Bot responde mensagens recebidas</div></div>
+      <label class="toggle"><input type="checkbox" id="bot-autoreply" checked /><span class="toggle-slider"></span></label>
+    </div>
+    <div class="toggle-wrap">
+      <div><div class="toggle-label">Bot ativo</div><div class="toggle-sub">Desative para pausar sem excluir</div></div>
+      <label class="toggle"><input type="checkbox" id="bot-active" checked /><span class="toggle-slider"></span></label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-bot')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveBot()" id="save-bot-btn">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:3001/api';
+let token = localStorage.getItem('token');
+let user = JSON.parse(localStorage.getItem('user') || 'null');
+let connections = [];
+let qrInterval = null;
+let currentQrConnId = null;
+
+// ── AUTH ──────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0) === (tab==='login')));
+  document.getElementById('tab-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('tab-register').style.display = tab === 'register' ? '' : 'none';
+}
+
+async function login() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) return toast('Preencha e-mail e senha', 'error');
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  try {
+    const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao entrar');
+    token = data.token; user = data.user;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    startApp();
+  } catch(e) { toast(e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Entrar';
+}
+
+async function register() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const tenantName = document.getElementById('reg-company').value.trim();
+  if (!name || !email || !password || !tenantName) return toast('Preencha todos os campos', 'error');
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true; btn.textContent = 'Criando...';
+  try {
+    const res = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, email, password, tenantName}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao criar conta');
+    token = data.token; user = data.user;
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    startApp();
+  } catch(e) { toast(e.message, 'error'); }
+  btn.disabled = false; btn.textContent = 'Criar conta';
+}
+
+function logout() {
+  localStorage.clear(); token = null; user = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+// ── APP ───────────────────────────────────────────
+function startApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('user-name-display').textContent = user?.name || '—';
+  document.getElementById('user-role-display').textContent = user?.role || '—';
+  document.getElementById('user-avatar').textContent = (user?.name || '?')[0].toUpperCase();
+  showPage('dashboard');
+}
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item')[['dashboard','conversations','connections','bots','messages'].indexOf(page)]?.classList.add('active');
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'conversations') loadConversations();
+  if (page === 'connections') loadConnections();
+  if (page === 'bots') loadBots();
+  if (page === 'messages') loadMessages();
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}`, ...(opts.headers || {}) }
+  });
+  if (res.status === 401) { logout(); throw new Error('Sessão expirada'); }
+  return res;
+}
+
+// ── DASHBOARD ─────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const [connRes, botRes, statsRes] = await Promise.all([
+      api('/connections'), api('/bots'), api('/messages/stats')
+    ]);
+    connections = await connRes.json();
+    const bots = await botRes.json();
+    const stats = await statsRes.json();
+
+    document.getElementById('stat-conn').textContent = connections.filter(c => c.status === 'connected').length;
+    document.getElementById('stat-bots').textContent = bots.filter(b => b.active && b.autoReply).length;
+    document.getElementById('stat-msgs').textContent = stats.totalToday ?? '—';
+
+    const el = document.getElementById('dash-connections');
+    if (!connections.length) { el.innerHTML = '<div class="empty">Nenhuma conexão criada</div>'; return; }
+    el.innerHTML = connections.map(c => `
+      <div class="msg-row">
+        <div class="msg-dir">${statusBadge(c.status)}</div>
+        <div class="msg-from">${c.name}</div>
+        <div class="msg-content" style="color:var(--muted);font-size:12px;font-family:'DM Mono',monospace">${c.phoneNumber || 'sem número'}</div>
+        <div class="msg-time">${c._count?.messages || 0} msgs</div>
+      </div>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+// ── CONNECTIONS ───────────────────────────────────
+async function loadConnections() {
+  const grid = document.getElementById('conn-grid');
+  grid.innerHTML = '<div class="loading">Carregando...</div>';
+  try {
+    const res = await api('/connections');
+    connections = await res.json();
+    if (!connections.length) { grid.innerHTML = '<div class="empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.6"/></svg>Nenhuma conexão criada ainda</div>'; return; }
+    grid.innerHTML = connections.map(c => `
+      <div class="conn-card">
+        <div class="conn-top">
+          <div>
+            <div class="conn-name">${c.name}</div>
+            <div class="conn-phone">${c.phoneNumber || 'Sem número'}</div>
+          </div>
+          ${statusBadge(c.status)}
+        </div>
+        <div style="font-size:11px;color:var(--muted)">${c._count?.messages || 0} mensagens</div>
+        <div class="conn-actions">
+          ${c.status !== 'connected'
+            ? `<button class="btn btn-primary" style="font-size:12px;padding:7px 12px" onclick="connectWA('${c.id}')">Conectar</button>`
+            : `<button class="btn btn-danger" style="font-size:12px;padding:7px 12px" onclick="disconnectWA('${c.id}')">Desconectar</button>`
+          }
+          <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px" onclick="deleteConn('${c.id}')">Remover</button>
+        </div>
+      </div>`).join('');
+    // also populate message filter
+    const sel = document.getElementById('msg-filter-conn');
+    sel.innerHTML = '<option value="">Todas as conexões</option>' + connections.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  } catch(e) { grid.innerHTML = '<div class="empty">Erro ao carregar</div>'; }
+}
+
+function openNewConn() { openModal('modal-new-conn'); document.getElementById('new-conn-name').value = ''; }
+
+async function createConnection() {
+  const name = document.getElementById('new-conn-name').value.trim();
+  if (!name) return toast('Digite um nome', 'error');
+  try {
+    const res = await api('/connections', { method:'POST', body: JSON.stringify({name}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    closeModal('modal-new-conn');
+    toast('Conexão criada!', 'success');
+    loadConnections();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function connectWA(id) {
+  try {
+    const res = await api(`/connections/${id}/connect`, { method:'POST' });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+    openModal('modal-qr');
+    currentQrConnId = id;
+    document.getElementById('qr-content').innerHTML = '<div class="loading">Gerando QR Code...<br><small style="color:var(--muted)">Aguarde alguns segundos</small></div>';
+    pollQR(id);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function pollQR(id) {
+  if (qrInterval) clearInterval(qrInterval);
+
+  qrInterval = setInterval(async () => {
+    try {
+      const res = await api(`/connections/${id}/qr`);
+      const conn = await res.json();
+
+      console.log(conn);
+
+      // conectado
+      if (conn.status === 'connected') {
+        clearInterval(qrInterval);
+
+        document.getElementById('qr-content').innerHTML = `
+          <div style="padding:20px;color:var(--accent);font-size:32px">✓</div>
+          <div style="color:var(--accent);font-weight:600">Conectado!</div>
+        `;
+
+        setTimeout(() => {
+          closeModal('modal-qr');
+          loadConnections();
+        }, 1500);
+
+        return;
+      }
+
+      // mostrar QR
+      if (conn.qrImage) {
+        document.getElementById('qr-content').innerHTML = `
+          <img
+            src="${conn.qrImage}"
+            alt="QR Code"
+            style="
+              width:240px;
+              height:240px;
+              background:#fff;
+              padding:12px;
+              border-radius:16px;
+            "
+          />
+        `;
+      }
+
+    } catch (e) {
+      console.error(e);
+    }
+  }, 2000);
+}
+
+async function disconnectWA(id) {
+  if (!confirm('Desconectar este número?')) return;
+  try {
+    await api(`/connections/${id}/disconnect`, { method:'POST' });
+    toast('Desconectado', 'success');
+    loadConnections();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteConn(id) {
+  if (!confirm('Remover esta conexão? Isso apaga mensagens e desvincula bots.')) return;
+  try {
+    const res = await api(`/connections/${id}`, { method:'DELETE' });
+    if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+    toast('Removida', 'success');
+    loadConnections();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── BOTS ──────────────────────────────────────────
+async function loadBots() {
+  const el = document.getElementById('bots-list');
+  el.innerHTML = '<div class="loading">Carregando...</div>';
+  try {
+    const [botRes, connRes] = await Promise.all([api('/bots'), api('/connections')]);
+    const bots = await botRes.json();
+    connections = await connRes.json();
+    if (!bots.length) { el.innerHTML = '<div class="empty">Nenhum bot criado ainda</div>'; return; }
+    el.innerHTML = bots.map(b => `
+      <div class="bot-card">
+        <div class="bot-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/></svg>
+        </div>
+        <div class="bot-info">
+          <div class="bot-name">${b.name}</div>
+          <div class="bot-meta">
+            ${b.active ? '<span style="color:var(--accent)">● Ativo</span>' : '<span style="color:var(--muted)">○ Inativo</span>'}
+            · ${b.autoReply ? 'Auto-reply ON' : 'Auto-reply OFF'}
+            · ${b.model}
+            ${b.connection ? ` · 📱 ${b.connection.name}` : ' · <span style="color:var(--warning)">⚠ Sem conexão</span>'}
+          </div>
+        </div>
+        <div class="bot-actions">
+          <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px" onclick="editBot(${JSON.stringify(b).replace(/"/g,'&quot;')})">Editar</button>
+          <button class="btn btn-danger" style="font-size:12px;padding:7px 12px" onclick="deleteBot('${b.id}')">Remover</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<div class="empty">Erro ao carregar</div>'; }
+}
+
+function openNewBot() {
+  document.getElementById('bot-modal-title').textContent = 'Novo bot';
+  document.getElementById('bot-id').value = '';
+  document.getElementById('bot-name').value = '';
+  document.getElementById('bot-prompt').value = 'Você é um assistente de atendimento ao cliente. Seja educado e profissional.';
+  document.getElementById('bot-model').value = 'gpt-4o-mini';
+  document.getElementById('bot-tokens').value = '500';
+  document.getElementById('bot-start').value = '';
+  document.getElementById('bot-end').value = '';
+  document.getElementById('bot-ignore').value = '';
+  document.getElementById('bot-autoreply').checked = true;
+  document.getElementById('bot-active').checked = true;
+  populateBotConnSelect(null);
+  openModal('modal-bot');
+}
+
+function editBot(b) {
+  document.getElementById('bot-modal-title').textContent = 'Editar bot';
+  document.getElementById('bot-id').value = b.id;
+  document.getElementById('bot-name').value = b.name;
+  document.getElementById('bot-prompt').value = b.prompt;
+  document.getElementById('bot-model').value = b.model;
+  document.getElementById('bot-tokens').value = b.maxTokens;
+  document.getElementById('bot-start').value = b.workingHoursStart || '';
+  document.getElementById('bot-end').value = b.workingHoursEnd || '';
+  document.getElementById('bot-ignore').value = b.ignoreKeywords || '';
+  document.getElementById('bot-autoreply').checked = b.autoReply;
+  document.getElementById('bot-active').checked = b.active;
+  populateBotConnSelect(b.connectionId);
+  openModal('modal-bot');
+}
+
+function populateBotConnSelect(selected) {
+  const sel = document.getElementById('bot-conn');
+  sel.innerHTML = '<option value="">— Sem conexão —</option>' + connections.map(c => `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${c.name} (${c.status})</option>`).join('');
+}
+
+async function saveBot() {
+  const id = document.getElementById('bot-id').value;
+  const body = {
+    name: document.getElementById('bot-name').value.trim(),
+    prompt: document.getElementById('bot-prompt').value.trim(),
+    model: document.getElementById('bot-model').value,
+    maxTokens: parseInt(document.getElementById('bot-tokens').value),
+    workingHoursStart: document.getElementById('bot-start').value || null,
+    workingHoursEnd: document.getElementById('bot-end').value || null,
+    ignoreKeywords: document.getElementById('bot-ignore').value || null,
+    autoReply: document.getElementById('bot-autoreply').checked,
+    active: document.getElementById('bot-active').checked,
+    connectionId: document.getElementById('bot-conn').value || null,
+  };
+  if (!body.name) return toast('Digite um nome para o bot', 'error');
+  const btn = document.getElementById('save-bot-btn');
+  btn.disabled = true;
+  try {
+    const res = await api(id ? `/bots/${id}` : '/bots', {
+      method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Erro ao salvar');
+    closeModal('modal-bot');
+    toast(id ? 'Bot atualizado!' : 'Bot criado!', 'success');
+    loadBots();
+  } catch(e) { toast(e.message, 'error'); }
+  btn.disabled = false;
+}
+
+async function deleteBot(id) {
+  if (!confirm('Remover este bot?')) return;
+  try {
+    await api(`/bots/${id}`, { method:'DELETE' });
+    toast('Bot removido', 'success');
+    loadBots();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+
+// ── CONVERSATIONS PREMIUM ─────────────────────────
+async function loadConversations() {
+  const el = document.getElementById('conversations-list');
+  el.innerHTML = '<div class="loading">Carregando...</div>';
+  const filter = document.getElementById('conv-filter')?.value || '';
+  let path = '/conversations';
+  if (filter === 'human') path += '?humanMode=true';
+  else if (filter) path += '?intent=' + encodeURIComponent(filter);
+  try {
+    const res = await api(path);
+    const conversations = await res.json();
+    if (!conversations.length) { el.innerHTML = '<div class="empty">Nenhuma conversa encontrada</div>'; return; }
+    el.innerHTML = conversations.map(c => `
+      <div class="bot-card" style="align-items:flex-start">
+        <div class="bot-icon">${c.humanMode ? '🙋' : '🤖'}</div>
+        <div class="bot-info">
+          <div class="bot-name">${c.displayName || c.contact}</div>
+          <div class="bot-meta">
+            ${c.humanMode ? '<span style="color:var(--warning)">● Humano solicitado</span>' : '<span style="color:var(--accent)">● IA ativa</span>'}
+            · ${c.intent || 'geral'} · prioridade ${c.priority || 'normal'} · ${c.connection?.name || ''}
+          </div>
+          <div style="margin-top:8px;color:var(--text);font-size:13px">${escapeHtml(c.lastMessage || '')}</div>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${(c.tags || []).map(t => `<span class="badge badge-gray">${t}</span>`).join('')}</div>
+          <textarea id="note-${c.id}" placeholder="Recado interno salvo no painel..." style="margin-top:10px;min-height:58px">${escapeHtml(c.internalNotes || '')}</textarea>
+        </div>
+        <div class="bot-actions" style="flex-direction:column">
+          <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px" onclick="toggleHuman('${c.id}', ${!c.humanMode})">${c.humanMode ? 'Voltar IA' : 'Assumir'}</button>
+          <button class="btn btn-primary" style="font-size:12px;padding:7px 12px" onclick="saveNote('${c.id}')">Salvar recado</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<div class="empty">Erro ao carregar conversas</div>'; }
+}
+
+async function toggleHuman(id, humanMode) {
+  try {
+    const res = await api(`/conversations/${id}`, { method:'PUT', body: JSON.stringify({ humanMode }) });
+    if (!res.ok) throw new Error('Erro ao atualizar conversa');
+    toast(humanMode ? 'Atendimento humano ativado' : 'IA reativada', 'success');
+    loadConversations();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function saveNote(id) {
+  const internalNotes = document.getElementById('note-' + id).value;
+  try {
+    const res = await api(`/conversations/${id}`, { method:'PUT', body: JSON.stringify({ internalNotes }) });
+    if (!res.ok) throw new Error('Erro ao salvar recado');
+    toast('Recado salvo no painel', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+}
+
+// ── MESSAGES ──────────────────────────────────────
+async function loadMessages() {
+  const el = document.getElementById('messages-list');
+  el.innerHTML = '<div class="loading">Carregando...</div>';
+  const connId = document.getElementById('msg-filter-conn').value;
+  if (!connId) {
+    // load stats instead if no connection selected
+    try {
+      const res = await api('/messages/stats');
+      const stats = await res.json();
+      document.getElementById('stat-msgs').textContent = stats.totalToday ?? '—';
+    } catch(e) {}
+    el.innerHTML = '<div class="empty">Selecione uma conexão para ver as mensagens</div>';
+    return;
+  }
+  try {
+    const res = await api(`/messages?connectionId=${connId}`);
+    const data = await res.json();
+    const msgs = data.messages || [];
+    if (!msgs.length) { el.innerHTML = '<div class="empty">Nenhuma mensagem nesta conexão</div>'; return; }
+    el.innerHTML = msgs.map(m => `
+      <div class="msg-row">
+        <div class="msg-dir">${m.direction === 'inbound' ? '<span class="badge badge-gray">↓ Recebida</span>' : '<span class="badge badge-green">↑ Enviada</span>'}</div>
+        <div class="msg-from">${m.from}</div>
+        <div class="msg-content">${m.content}</div>
+        <div class="msg-time">${formatDate(m.createdAt)}</div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<div class="empty">Erro ao carregar mensagens</div>'; }
+}
+
+// ── HELPERS ───────────────────────────────────────
+function statusBadge(s) {
+  if (s === 'connected') return '<span class="badge badge-green">Conectado</span>';
+  if (s === 'connecting') return '<span class="badge badge-yellow">Conectando</span>';
+  return '<span class="badge badge-gray">Desconectado</span>';
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'modal-qr' && qrInterval) { clearInterval(qrInterval); qrInterval = null; }
+}
+
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  el.innerHTML = (type === 'success' ? '✓ ' : '✕ ') + msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── INIT ──────────────────────────────────────────
+if (token && user) startApp();
+
+// close modals on bg click
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target === bg) closeModal(bg.id); });
+});
+
+// enter key on login
+document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+</script>
+</body>
+</html>

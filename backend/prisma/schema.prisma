@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      String   @default("free")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  connections WhatsAppConnection[]
+  botConfigs  BotConfig[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("admin")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model WhatsAppConnection {
+  id          String   @id @default(cuid())
+  phoneNumber String?
+  name        String
+  status      String   @default("disconnected")
+  qrCode      String?
+  sessionData String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantId   String
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages   Message[]
+  conversations Conversation[]
+  botConfigs BotConfig[]
+}
+
+model BotConfig {
+  id                String  @id @default(cuid())
+  name              String
+  active            Boolean @default(true)
+  prompt            String  @default("Você é um assistente de atendimento ao cliente. Seja educado e profissional.")
+  model             String  @default("gpt-4o-mini")
+  temperature       Float   @default(0.7)
+  maxTokens         Int     @default(500)
+  autoReply         Boolean @default(true)
+  workingHoursStart String?
+  workingHoursEnd   String?
+  ignoreKeywords    String?
+  greetingMessage   String?
+
+  tenantId     String
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId String?
+  connection   WhatsAppConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+}
+
+model Conversation {
+  id               String   @id @default(cuid())
+  contact          String
+  displayName      String?
+  intent           String   @default("geral")
+  sentiment        String   @default("neutro")
+  priority         String   @default("normal")
+  tags             String   @default("[]")
+  humanMode        Boolean  @default(false)
+  humanRequestedAt DateTime?
+  internalNotes    String?
+  lastMessage      String?
+  lastMessageAt    DateTime @default(now())
+  dayMemory        String   @default("[]")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  connectionId String
+  connection   WhatsAppConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  messages     Message[]
+
+  @@unique([connectionId, contact])
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  from        String
+  content     String
+  direction   String
+  status      String   @default("sent")
+  aiGenerated Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  connectionId String
+  connection   WhatsAppConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+}
+
+model Plan {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  price          Float
+  maxConnections Int      @default(1)
+  maxMessages    Int      @default(500)
+  maxUsers       Int      @default(1)
+  hasAi          Boolean  @default(false)
+  hasApi         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
