@@ -437,8 +437,11 @@ Prefira:
   } catch (error) {
     console.error(error)
 
-    return res.status(500).json({
-      reply: 'Tive um probleminha aqui agora. Pode tentar de novo rapidinho?',
-    })
+    console.error("SITE_CHAT_ERROR:", error)
+
+return res.status(500).json({
+  reply: 'Tive um probleminha aqui agora. Pode tentar de novo rapidinho?',
+  error: error instanceof Error ? error.message : String(error),
+})
   }
 })
