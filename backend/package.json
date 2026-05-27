@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "db:push": "prisma db push",
-    "db:seed": "tsx src/seed.ts"
-  },
+  "dev": "tsx watch src/server.ts",
+  "build": "tsc",
+  "start": "node dist/server.js",
+  "db:push": "prisma db push",
+  "db:seed": "tsx src/seed.ts",
+  "postinstall": "prisma generate"
+},
   "prisma": {
     "seed": "tsx src/seed.ts"
   },
