@@ -7,9 +7,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "db:push": "prisma db push",
-    "db:seed": "tsx src/seed.ts",
-    "postinstall": "prisma generate",
-    "railway:start": "prisma db push && node dist/server.js"
+    "db:seed": "tsx src/seed.ts"
   },
   "prisma": {
     "seed": "tsx src/seed.ts"
